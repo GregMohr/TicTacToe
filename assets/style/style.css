@@ -1,0 +1,40 @@
+* {
+    font-family: 'Raleway';
+}
+
+#board {
+    margin-top: 10px;
+}
+
+.space {
+    display: inline-block;
+    border: 1px solid grey;
+    height: 70px;
+    width: 70px;
+    margin: 5px;
+}
+
+#stats-bar {
+    height: 40px;
+    margin-top: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background-color: black;
+}
+
+#info {
+    font-size: 15px;
+    display: inline-block;
+    background-color: black;
+    width: 238px;
+    height: 30px;
+    border-top: 1px solid white;
+    border-bottom: 1px solid white;
+    color: white;
+    line-height: 30px;
+}
+
+.option:hover {
+    color: rgb(86, 188, 223);
+    cursor: pointer;
+}
