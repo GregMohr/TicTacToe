@@ -14,17 +14,14 @@
     margin: 5px;
 }
 
-#space1 {
-    background-color: transparent;
-    background-image: url("assets/images/black-x1.png");
+.x {
+    background-image: url("../images/black-x.png");
+    background-size: contain;
 }
 
-#space2 {
-    background-image: url("assets/images/black-x2.png");
-}
-
-#space3 {
-    background-image: url("assets/images/white-x.png");
+.o {
+    background-image: url("../images/black-o.png");
+    background-size: contain;
 }
 
 #stats-bar {
