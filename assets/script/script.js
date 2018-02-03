@@ -24,7 +24,7 @@ let infoElem = document.getElementById("info"),
     spaces = [...document.getElementsByClassName("space")],
     playerInfo = [...document.getElementsByClassName("player-info")],
     availableSpaces = ["space1", "space2", "space3", "space4", "space5", "space6", "space7", "space8", "space9"],
-    player1 = new Player(1, "human", playerMove),
+    player1 = new Player(1, "human"),
     ask,
     askComponents = [
         ["Versus", "Human", "Computer", () => player2 = new Player(2, "human"), () => player2 = new Player(2, "computer")],
