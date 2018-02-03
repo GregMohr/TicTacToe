@@ -11,13 +11,11 @@ x. fanfare on player win
 x. sad otter on comp win
 x. first to win 10 gets the Ultra win, or perhaps lower and there can be higher levels of wins that give you an extra win or power up (user choice)
 x. player name
-x. user experience component? maybe instead of wins..probably not
+x. user experience component? maybe instead of wins or along with wins. 
 
 x. Tic Tac Toe Version: Original, Plus (powerups), Ex(9 boards, winning a board gives you an overall marker to gain extra wins), Ultra Plus and Ex?
-x. implement key controls for player 1
-pass callback to player1 move that handles player2 being a computer or human. there will be two different callbacks
-    //possible future feature: have the coin toss interactive with random player pick heads or tails/X or O
-    //maybe even allow the nonpicking player be the toss stopper
+x. implement key controls for assignable player. control options: 1 kbd/1 mouse or both players switch mouse, both players kbd
+x. user interactive coin toss: random player picks X or O;  opposing player stops the toss. Decides who goes first and maybe who gets what marker. Winner of coind toss gets to choose marker first and go first?
 */
 let infoElem = document.getElementById("info"),
     questionElem = document.getElementById("question"),
@@ -29,45 +27,18 @@ let infoElem = document.getElementById("info"),
     player1 = new Player(1, "human", playerMove),
     ask,
     askComponents = [
-        ["Versus", "Human", "Computer", () => player2 = new Player(2, "human", playerMove), () => player2 = new Player(2, "computer", computerMove)],
+        ["Versus", "Human", "Computer", () => player2 = new Player(2, "human"), () => player2 = new Player(2, "computer")],
         ["Player 1", "Xs", "Os", () => player1.marker = (player2.marker = "o", "x"), () => player1.marker = (player2.marker = "x", "o")]
     ],
     curPlayer,
     move = 1;
 
-spaces.forEach(el => {
-    console.log("adding listener for: " + el.id);
-    el.addEventListener("mousedown", spaceClick);
-});
-
-gameLoop();
-
-function gameLoop() { //does it make more sense for init to be the loop, getInputs/init...
-    console.log("running init");
-    init(); //questions and choose first, maybe add in boardInit to handle 1 time intializtions related to the game board itself, such as adding listeners to spaces
-    // console.log("choosing first move");
-    // chooseFirst();
-    // console.log("starting turns");
-    //setTimeout here or in chooseFirst. slow should go, show who dirst msg, pause for a few seconds, fade out msg, while fading in player sections while highlighting who has current move
-    // turnLoop();
-}
+showAsk();
 
 function Player(id, type, move) {
     this.id = id;
     this.type = type;
-    this.move = move;
     this.marker;
-}
-
-function playerMove() {
-    console.dir(spaces);
-    if (availableSpaces.includes(this.id)) {
-
-    }
-
-
-    //check if space is open
-    //place players marker if so
 }
 
 function computerMove() {
@@ -89,28 +60,22 @@ function spaceClick() {
         return;
     }
 
-    //add curPlayer.marker to space's classes
     let mark = document.getElementById(this.id);
     mark.classList.add(curPlayer.marker);
-
     move++;
 
     //check win conditions if move > 4
 
-
-    //switch curPlayer
     curPlayer = curPlayer == player1 ? player2 : player1;
     console.log("space clicked");
     console.dir(curPlayer);
+    if (curPlayer.type == "computer") {
+        computerMove();
+    }
 }
 
 function winCheck() {
 
-}
-
-function markSpace(e) {
-    console.log("marking space");
-    console.dir(e);
 }
 
 function Ask(question, option1, option2, result1, result2) {
@@ -121,46 +86,20 @@ function Ask(question, option1, option2, result1, result2) {
     this.result2 = result2;
 }
 
-
-function init() { //should this be combined with showAsk?
+function showAsk() {
     if (!askComponents.length) {
-        console.log("exiting init");
-        chooseFirst();
-        // turnLoop();
+        console.log("no more questions, choosing first player");
+        chooseFirst(); //this will need to be modified to allow for new questions later. should work for replay (rechoosing first), but maybe not all future end game scenarios, such as in Ex
         return;
     }
-    console.log("asking");
     ask = new Ask(...askComponents.shift());
-    showAsk(ask);
-}
-
-function turnLoop() {
-    let move = 1,
-        win = false;
-    //player moves are callbacks attached to player object that prompts a human player or chooses for a computer player
-    //player moves with loops to not start until 5th moce and run checking until a win condition is met
-
-    while (!win) {
-        curPlayer.move(); //if this ends up being just to display whose move it is, delete player.move and just put the msg here
-        move++;
-        curPlayer = curPlayer == player1 ? player2 : player1;
-        if (move > 4) {
-            //check win conditions
-        }
-    }
-    //final moves if any
-    //winner declared
-    //replay function, play again (same settings) or restart (start from start)
-}
-
-function showAsk() {
     console.log("showing ask");
     questionElem.innerHTML = ask.question;
     option1Elem.innerHTML = ask.option1;
     option2Elem.innerHTML = ask.option2;
     option1Elem.addEventListener("click", optionClick1 = function() { optionClick(ask.result1) });
     option2Elem.addEventListener("click", optionClick2 = function() { optionClick(ask.result2) });
-
+    console.log("exiting show ask");
 }
 
 function optionClick(callback) {
@@ -175,8 +114,8 @@ function optionClick(callback) {
 function reBounceIn() {
     infoElem.classList.remove("bounceOut");
     infoElem.removeEventListener("webkitAnimationEnd", reBounceIn);
-    console.log("re-calling init");
-    init();
+    console.log("re-calling showAsk");
+    showAsk();
 }
 
 function chooseFirst() {
@@ -186,18 +125,15 @@ function chooseFirst() {
     spaces.forEach(el => {
         console.log("adding listener for: " + el.id);
         el.addEventListener("mousedown", spaceClick);
-        el.addEventListener("mousedown", clearMessage);
+        el.addEventListener("mousedown", gameStart);
     });
 }
 
-function clearMessage() {
-    spaces.forEach(el => el.removeEventListener("mousedown", clearMessage));
+function gameStart() {
+    spaces.forEach(el => el.removeEventListener("mousedown", gameStart));
     infoElem.classList.add("fadeOut");
-    //slow fade in player elements
     playerInfo.forEach(el => {
         el.removeAttribute("hidden");
         el.classList.add("fadeIn");
-    }); //el.prop("hidden", false)
-    // playerInfo.prop("hidden", false);
-    // .classList.add("fadeIn")
+    });
 }
