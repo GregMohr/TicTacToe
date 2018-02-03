@@ -48,3 +48,19 @@
     color: rgb(86, 188, 223);
     cursor: pointer;
 }
+
+#stats-bar {
+    color: white;
+}
+
+#player1-score {
+    margin: 0 0 0 15px;
+}
+
+#player2-score {
+    margin: 0 15px 0 0;
+}
+
+.player-info {
+    font-size: 20px;
+}
