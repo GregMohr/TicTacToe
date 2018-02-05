@@ -12,70 +12,114 @@ x. sad otter on comp win
 x. first to win 10 gets the Ultra win, or perhaps lower and there can be higher levels of wins that give you an extra win or power up (user choice)
 x. player name
 x. user experience component? maybe instead of wins or along with wins. 
-
 x. Tic Tac Toe Version: Original, Plus (powerups), Ex(9 boards, winning a board gives you an overall marker to gain extra wins), Ultra Plus and Ex?
 x. implement key controls for assignable player. control options: 1 kbd/1 mouse or both players switch mouse, both players kbd
 x. user interactive coin toss: random player picks X or O;  opposing player stops the toss. Decides who goes first and maybe who gets what marker. Winner of coind toss gets to choose marker first and go first?
+x. wargames mode where both players are computer
+x. more computer techniques: starting from corner;
+
+x. may need to have multiple askComp sets for varied situations in the future. then just create a copy of the needed one for showAsk to splice up
 */
 let infoElem = document.getElementById("info"),
     questionElem = document.getElementById("question"),
     option1Elem = document.getElementById("option1"),
     option2Elem = document.getElementById("option2"),
+    player1Score = document.getElementById("player1-score"),
+    player2Score = document.getElementById("player2-score"),
     spaces = [...document.getElementsByClassName("space")],
     playerInfo = [...document.getElementsByClassName("player-info")],
     availableSpaces = ["space1", "space2", "space3", "space4", "space5", "space6", "space7", "space8", "space9"],
     player1 = new Player(1, "human"),
+    player2 = new Player(2),
     ask,
     askComponents = [
-        ["Versus", "Human", "Computer", () => player2 = new Player(2, "human"), () => player2 = new Player(2, "computer")],
+        ["Versus", "Human", "Computer", () => player2.type = "human", () => player2.type = "computer"],
         ["Player 1", "Xs", "Os", () => player1.marker = (player2.marker = "o", "x"), () => player1.marker = (player2.marker = "x", "o")]
     ],
+    winCombos = [
+        ["space1", "space2", "space3"],
+        ["space4", "space5", "space6"],
+        ["space7", "space8", "space9"],
+        ["space1", "space4", "space7"],
+        ["space2", "space5", "space8"],
+        ["space3", "space6", "space9"],
+        ["space1", "space5", "space9"],
+        ["space3", "space5", "space7"]
+    ],
     curPlayer,
-    move = 1;
+    move = () => { return player1.moves.length + player2.moves.length };
 
 showAsk();
 
-function Player(id, type, move) {
+function Player(id, type) {
     this.id = id;
     this.type = type;
     this.marker;
+    this.moves = [];
 }
 
 function computerMove() {
-    //check available spaces
-    if (availableSpaces.includes(this.id)) {
-
+    console.log("computerMove");
+    if (move() === 1) {
+        //choose center
+        //choose corner
     }
-    //check if any complete a win condition
+
+    //if center, opponent will be on edge or corner
+    //-if edge, place on one of two corners opposite edge piece, they block, you block and be set for two win combos
+    //-if corner, 
+    this.removeEventListener("mousedown", spaceClick);
+    //how to handle working towards a win from the first move for computer
+    //check if any available spaces complete a win condition
     //check if opponent can win on next move and block
     //if not, pick random available
 }
 
 function spaceClick() {
+    console.log("spaceClick on: " + this.id);
     this.removeEventListener("mousedown", spaceClick);
-    let idx = availableSpaces.indexOf(this.id);
-    if (idx != -1) {
-        availableSpaces.splice(idx, 1);
-    } else {
-        return;
-    }
-
+    availableSpaces.splice(availableSpaces.indexOf(this.id), 1);
     let mark = document.getElementById(this.id);
     mark.classList.add(curPlayer.marker);
-    move++;
 
-    //check win conditions if move > 4
+    curPlayer.moves.push(this.id);
+    console.log("move#: " + move());
+    if (move() > 4 && winCheck()) return;
 
-    curPlayer = curPlayer == player1 ? player2 : player1;
-    console.log("space clicked");
-    console.dir(curPlayer);
-    if (curPlayer.type == "computer") {
+    curPlayer = curPlayer === player1 ? player2 : player1;
+
+    if (curPlayer.type === "computer") {
         computerMove();
     }
 }
 
-function winCheck() {
+function winCheck() { //rename to endCheck and include draw conditions
+    winCombos.forEach(el => {
+        if (el.every(sp => { return curPlayer.moves.includes(sp) })) {
+            console.log("winner");
+            spaces.forEach(el => el.removeEventListener("mousedown", spaceClick));
+            infoElem.innerHTML = "Player " + curPlayer.id + " wins!";
 
+            //reset needed elem states
+            infoElem.classList.remove("fadeOut");
+            //start new game, varied replay options will be added later
+            setTimeout(gameEnd, 3000);
+            curPlayer === player1 ? player1Score.innerHTML = +player1Score.innerHTML + 1 : player2Score.innerHTML = +player2Score.innerHTML + 1;
+            return true;
+        } else {
+            return false;
+        }
+    });
+}
+
+function gameEnd() {
+    infoElem.classList.add("fadeOut");
+    console.log("removing markers");
+    spaces.forEach(el => el.classList.remove("x", "o"));
+    curPlayer = null;
+    player1.moves.length = 0;
+    player2.moves.length = 0;
+    chooseFirst();
 }
 
 function Ask(question, option1, option2, result1, result2) {
@@ -122,11 +166,18 @@ function chooseFirst() {
     let outcome = Math.floor(Math.random() * 2) + 1;
     infoElem.innerHTML = "Player " + outcome + " goes first.";
     curPlayer = outcome == 1 ? player1 : player2;
+    if (curPlayer.type == "computer") {
+        //do we need to add a delay here somehow? Otherwise the computer will immediately go and the first player msg will be lost
+        computerMove();
+    }
     spaces.forEach(el => {
         console.log("adding listener for: " + el.id);
         el.addEventListener("mousedown", spaceClick);
         el.addEventListener("mousedown", gameStart);
     });
+    if (curPlayer.type == "computer") {
+        gameStart();
+    }
 }
 
 function gameStart() {
