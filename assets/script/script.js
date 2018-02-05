@@ -68,8 +68,6 @@ function computerMove() {
     //if center, opponent will be on edge or corner
     //-if edge, place on one of two corners opposite edge piece, they block, you block and be set for two win combos
     //-if corner, 
-    this.removeEventListener("mousedown", spaceClick);
-    //how to handle working towards a win from the first move for computer
     //check if any available spaces complete a win condition
     //check if opponent can win on next move and block
     //if not, pick random available
@@ -84,7 +82,11 @@ function spaceClick() {
 
     curPlayer.moves.push(this.id);
     console.log("move#: " + move());
-    if (move() > 4 && winCheck()) return;
+    if (move() > 4) {
+        if (endCheck()) {
+            return;
+        }
+    }
 
     curPlayer = curPlayer === player1 ? player2 : player1;
 
@@ -93,23 +95,33 @@ function spaceClick() {
     }
 }
 
-function winCheck() { //rename to endCheck and include draw conditions
-    winCombos.forEach(el => {
-        if (el.every(sp => { return curPlayer.moves.includes(sp) })) {
-            console.log("winner");
-            spaces.forEach(el => el.removeEventListener("mousedown", spaceClick));
-            infoElem.innerHTML = "Player " + curPlayer.id + " wins!";
+function endCheck() {
+    console.log("endcheck");
+    let win = winCombos.some(el => {
+        console.log("win combo");
+        console.dir(el);
+        let all = el.every(sp => { return curPlayer.moves.includes(sp) });
+        console.log("all? " + all);
+        return el.every(sp => { return curPlayer.moves.includes(sp) });
+    })
+    console.log("win check: " + win);
+    console.log("move check: " + move());
+    if (win || move() === 9) {
+        console.log("ending game");
+        spaces.forEach(el => el.removeEventListener("mousedown", spaceClick));
 
-            //reset needed elem states
-            infoElem.classList.remove("fadeOut");
-            //start new game, varied replay options will be added later
-            setTimeout(gameEnd, 3000);
+        if (win) {
+            infoElem.innerHTML = "Player " + curPlayer.id + " wins!";
             curPlayer === player1 ? player1Score.innerHTML = +player1Score.innerHTML + 1 : player2Score.innerHTML = +player2Score.innerHTML + 1;
-            return true;
         } else {
-            return false;
+            infoElem.innerHTML = "Draw";
         }
-    });
+        infoElem.classList.remove("fadeOut");
+        setTimeout(gameEnd, 3000);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function gameEnd() {
