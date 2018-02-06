@@ -88,6 +88,7 @@ function Player(id, type) {
 // A-check third corner(?) and X surrounded edge for win
 // B1-look for win
 let compFirst = [compCenter, compOppCorner, compFirstThird, canWin];
+let compSecond = [];
 
 function compCenter() {
     spaces[4].dispatchEvent(new MouseEvent('mousedown'));
@@ -116,7 +117,6 @@ function compOppCorner() {
             if (availableSpaces.includes("space3")) compMove = spaces[2];
             break;
         case "space8":
-            //1 or 3
             if (availableSpaces.includes("space1" || "space3")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
             break;
         case "space9":
@@ -125,22 +125,28 @@ function compOppCorner() {
         default:
             console.log("could not find open opposite corner for: " + lastMove);
             console.log("choosing first available");
-            // compMove = availableSpaces.shift();
+            compMove = document.getElementById(availableSpaces.shift()); //might create compRandom which would replace this line and add more randomness
     }
     compMove.dispatchEvent(new MouseEvent('mousedown'));
 }
 
 function compFirstThird() {
+    //this may not fully consider both decision paths to this point
+    console.log("check for winning move and take it");
     let winMove = canWin(player2);
+    console.log("winMove: " + winMove);
     if (winMove != false) { //if win exists, take it
+        console.log("winning move found. clicking");
         winMove.dispatchEvent(new MouseEvent('mousedown'));
         return;
     }
+    console.log("check for opponent winning move and block it");
     winMove = canWin(player1);
     if (winMove != false) { //if player1 can win on next turn, block
         winMove.dispatchEvent(new MouseEvent('mousedown'));
         return;
     }
+    console.log("could not win or block, trying opposite corner");
     compOppCorner();
 }
 
@@ -152,14 +158,28 @@ function canWin(checkPlayer) {
     let found = [],
         missing = [];
     for (let i = 0; i < winCombos.length; i++) {
+        console.log("win combo: " + winCombos[i]);
+        // console.dir(winCombos[i]);
         found = winCombos[i].filter(sp => {
             if (!checkPlayer.moves.includes(sp)) missing.push(sp);
             return checkPlayer.moves.includes(sp);
         });
+        console.log("found: " + found);
+        // console.dir(found);
 
-        if (found.length === 2 && availableSpaces.includes(missing)) return missing;
+        console.log("missing: " + missing);
+        console.dir(missing);
+        console.log("is missing available? " + availableSpaces.includes("" + missing));
+        console.dir(availableSpaces);
+
+        if (found.length === 2 && availableSpaces.includes("" + missing)) {
+            winningSpace = spaces.find(sp => sp.id == missing);
+            return winningSpace;
+        }
+        found.length = 0;
+        missing.length = 0;
     }
-    return false;
+    return -1;
 }
 
 function computerMove() {
@@ -270,9 +290,12 @@ function reBounceIn() {
 }
 
 function chooseFirst() {
-    let outcome = Math.floor(Math.random() * 2) + 1;
-    infoElem.innerHTML = "Player " + outcome + " goes first.";
-    curPlayer = outcome == 1 ? player1 : player2;
+    // let outcome = Math.floor(Math.random() * 2) + 1;
+    // infoElem.innerHTML = "Player " + outcome + " goes first.";
+    // curPlayer = outcome == 1 ? player1 : player2;
+    curPlayer = player2;
+    infoElem.innerHTML = "Player 2 goes first.";
+
     setTimeout(gameStart, 2000);
     spaces.forEach(el => {
         //should I worry about the small amount of time the user will be able to click the spaces before the computer can move on first move?
