@@ -47,7 +47,8 @@ let infoElem = document.getElementById("info"),
         ["space3", "space5", "space7"]
     ],
     curPlayer,
-    move = () => { return player1.moves.length + player2.moves.length };
+    move = () => { return player1.moves.length + player2.moves.length },
+    pattern;
 
 showAsk();
 
@@ -66,7 +67,7 @@ function Player(id, type) {
 // B-corner
 
 // C 3rd:
-// A-O played edge, play opposite corner(only two options, match edges for opposites)
+// A-O played edge, play opposite corner
 // B-opposite corner to last O play
 
 // O 4th:
@@ -93,78 +94,80 @@ function compCenter() {
 }
 
 function compOppCorner() {
-    let lastMove = player1.moves[player.moves.length - 1];
+    let lastMove = player1.moves[player1.moves.length - 1];
+    let compMove;
     switch (lastMove) {
         case "space1":
-            if (spaces[8].classList.contains("x") || spaces[8].classList.contains("o")) {
-                console.log("compOppCorner failed");
-                return;
-            }
-            spaces[8].dispatchEvent(new MouseEvent('mousedown'));
+            if (availableSpaces.includes("space9")) compMove = spaces[8];
             break;
         case "space2":
-            //7 or 9
+            if (availableSpaces.includes("space7" || "space9")) compMove = availableSpaces.includes("space7") ? spaces[6] : spaces[8];
             break;
         case "space3":
-            spaces[6].dispatchEvent(new MouseEvent('mousedown'));
+            if (availableSpaces.includes("space7")) compMove = spaces[6];
             break;
         case "space4":
-            //3 or 9
+            if (availableSpaces.includes("space3" || "space9")) compMove = availableSpaces.includes("space3") ? spaces[2] : spaces[8];
             break;
         case "space6":
-            //1 or 7
+            if (availableSpaces.includes("space1" || "space7")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[6];
             break;
         case "space7":
-            spaces[2].dispatchEvent(new MouseEvent('mousedown'));
+            if (availableSpaces.includes("space3")) compMove = spaces[2];
             break;
         case "space8":
             //1 or 3
+            if (availableSpaces.includes("space1" || "space3")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
             break;
         case "space9":
-            spaces[0].dispatchEvent(new MouseEvent('mousedown'));
+            if (availableSpaces.includes("space1")) compMove = spaces[0];
             break;
+        default:
+            console.log("could not find open opposite corner for: " + lastMove);
+            console.log("choosing first available");
+            // compMove = availableSpaces.shift();
     }
+    compMove.dispatchEvent(new MouseEvent('mousedown'));
 }
 
 function compFirstThird() {
-    //compBlock
-    //canWin
-    //compOppCorner
+    let winMove = canWin(player2);
+    if (winMove != false) { //if win exists, take it
+        winMove.dispatchEvent(new MouseEvent('mousedown'));
+        return;
+    }
+    winMove = canWin(player1);
+    if (winMove != false) { //if player1 can win on next turn, block
+        winMove.dispatchEvent(new MouseEvent('mousedown'));
+        return;
+    }
+    compOppCorner();
 }
 
 function compBlock() {
 
 }
 
+function canWin(checkPlayer) {
+    let found = [],
+        missing = [];
+    for (let i = 0; i < winCombos.length; i++) {
+        found = winCombos[i].filter(sp => {
+            if (!checkPlayer.moves.includes(sp)) missing.push(sp);
+            return checkPlayer.moves.includes(sp);
+        });
+
+        if (found.length === 2 && availableSpaces.includes(missing)) return missing;
+    }
+    return false;
+}
+
 function computerMove() {
     console.log("computerMove");
+    if (typeof pattern === "undefined") pattern = move() === 0 ? compFirst : compSecond;
 
-    if (move() === 0) {
-        console.log("computer moves first");
-        //computer goes first
-        //choose center
-        //-
-        //choose corner
-        return;
-    }
-
-    if (move() === 1) {
-        console.log("computer going second");
-        if (player1.moves[0] === "space5") {
-            console.log("player chose center");
-            console.dir(spaces[0]);
-            let spaceMark = document.getElementById("space1");
-            console.dir(spaceMark);
-
-            spaceMark.dispatchEvent(new MouseEvent('mousedown')); //spaces[0]
-        }
-    }
-
-    //-if edge, place on one of two corners opposite edge piece, they block, you block and be set for two win combos
-    //-if corner, 
-    //check if any available spaces complete a win condition
-    //check if opponent can win on next move and block
-    //if not, pick random available
+    let turn = pattern.shift();
+    turn();
 }
 
 function spaceClick() {
@@ -194,8 +197,6 @@ function endCheck() {
     let win = winCombos.some(el => {
         console.log("win combo");
         console.dir(el);
-        let all = el.every(sp => { return curPlayer.moves.includes(sp) });
-        console.log("all? " + all);
         return el.every(sp => { return curPlayer.moves.includes(sp) });
     })
     console.log("win check: " + win);
