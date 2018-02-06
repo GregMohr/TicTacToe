@@ -58,14 +58,108 @@ function Player(id, type) {
     this.moves = [];
 }
 
+// C 1st:
+// -center
+
+// O 2nd:
+// A-edge
+// B-corner
+
+// C 3rd:
+// A-O played edge, play opposite corner(only two options, match edges for opposites)
+// B-opposite corner to last O play
+
+// O 4th:
+// A1-block or A2 not
+// B1-edge or B2-corner
+
+// C 5th:
+// A1-block
+// A2-check if opposite corner to last C played open, if so win
+// B1-play opposite open corner
+// B2-counter to tie
+
+// O 6th:
+// A--
+// B1--
+
+// C 7th:
+// A-check third corner(?) and X surrounded edge for win
+// B1-look for win
+let compFirst = [compCenter, compOppCorner, compFirstThird, canWin];
+
+function compCenter() {
+    spaces[4].dispatchEvent(new MouseEvent('mousedown'));
+}
+
+function compOppCorner() {
+    let lastMove = player1.moves[player.moves.length - 1];
+    switch (lastMove) {
+        case "space1":
+            if (spaces[8].classList.contains("x") || spaces[8].classList.contains("o")) {
+                console.log("compOppCorner failed");
+                return;
+            }
+            spaces[8].dispatchEvent(new MouseEvent('mousedown'));
+            break;
+        case "space2":
+            //7 or 9
+            break;
+        case "space3":
+            spaces[6].dispatchEvent(new MouseEvent('mousedown'));
+            break;
+        case "space4":
+            //3 or 9
+            break;
+        case "space6":
+            //1 or 7
+            break;
+        case "space7":
+            spaces[2].dispatchEvent(new MouseEvent('mousedown'));
+            break;
+        case "space8":
+            //1 or 3
+            break;
+        case "space9":
+            spaces[0].dispatchEvent(new MouseEvent('mousedown'));
+            break;
+    }
+}
+
+function compFirstThird() {
+    //compBlock
+    //canWin
+    //compOppCorner
+}
+
+function compBlock() {
+
+}
+
 function computerMove() {
     console.log("computerMove");
-    if (move() === 1) {
+
+    if (move() === 0) {
+        console.log("computer moves first");
+        //computer goes first
         //choose center
+        //-
         //choose corner
+        return;
     }
 
-    //if center, opponent will be on edge or corner
+    if (move() === 1) {
+        console.log("computer going second");
+        if (player1.moves[0] === "space5") {
+            console.log("player chose center");
+            console.dir(spaces[0]);
+            let spaceMark = document.getElementById("space1");
+            console.dir(spaceMark);
+
+            spaceMark.dispatchEvent(new MouseEvent('mousedown')); //spaces[0]
+        }
+    }
+
     //-if edge, place on one of two corners opposite edge piece, they block, you block and be set for two win combos
     //-if corner, 
     //check if any available spaces complete a win condition
@@ -178,22 +272,18 @@ function chooseFirst() {
     let outcome = Math.floor(Math.random() * 2) + 1;
     infoElem.innerHTML = "Player " + outcome + " goes first.";
     curPlayer = outcome == 1 ? player1 : player2;
-    if (curPlayer.type == "computer") {
-        //do we need to add a delay here somehow? Otherwise the computer will immediately go and the first player msg will be lost
-        computerMove();
-    }
+    setTimeout(gameStart, 2000);
     spaces.forEach(el => {
-        console.log("adding listener for: " + el.id);
+        //should I worry about the small amount of time the user will be able to click the spaces before the computer can move on first move?
         el.addEventListener("mousedown", spaceClick);
-        el.addEventListener("mousedown", gameStart);
     });
+    console.log("curPlayer type: " + curPlayer.type);
     if (curPlayer.type == "computer") {
-        gameStart();
+        computerMove();
     }
 }
 
 function gameStart() {
-    spaces.forEach(el => el.removeEventListener("mousedown", gameStart));
     infoElem.classList.add("fadeOut");
     playerInfo.forEach(el => {
         el.removeAttribute("hidden");
