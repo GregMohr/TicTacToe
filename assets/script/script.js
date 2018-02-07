@@ -19,6 +19,38 @@ x. wargames mode where both players are computer
 x. more computer techniques: starting from corner;
 
 x. may need to have multiple askComp sets for varied situations in the future. then just create a copy of the needed one for showAsk to splice up
+C 1st:
+-center
+
+O 2nd:
+A-edge
+B-corner
+
+C 3rd:
+A-opposite corner
+B-opposite corner
+
+O 4th:
+A1-block
+A2-not block
+B1-edge
+B2-corner
+
+C 5th:
+A1-block
+A2-WIN
+B1-counter
+B2-counter to tie
+
+O 6th:
+A--
+B1--
+B2-edge/block (error)
+
+C 7th:
+A-WIN
+B1-look for win
+B2-counter
 */
 let infoElem = document.getElementById("info"),
     questionElem = document.getElementById("question"),
@@ -28,11 +60,12 @@ let infoElem = document.getElementById("info"),
     player2Score = document.getElementById("player2-score"),
     spaces = [...document.getElementsByClassName("space")],
     playerInfo = [...document.getElementsByClassName("player-info")],
-    availableSpaces = ["space1", "space2", "space3", "space4", "space5", "space6", "space7", "space8", "space9"],
+    allSpaces = ["space1", "space2", "space3", "space4", "space5", "space6", "space7", "space8", "space9"],
+    availableSpaces,
     player1 = new Player(1, "human"),
     player2 = new Player(2),
     ask,
-    askComponents = [
+    askComponents = [ //when questions expand I could either segregate them into units like this, or have them all here and slice them out
         ["Versus", "Human", "Computer", () => player2.type = "human", () => player2.type = "computer"],
         ["Player 1", "Xs", "Os", () => player1.marker = (player2.marker = "o", "x"), () => player1.marker = (player2.marker = "x", "o")]
     ],
@@ -48,8 +81,11 @@ let infoElem = document.getElementById("info"),
     ],
     curPlayer,
     move = () => { return player1.moves.length + player2.moves.length },
-    pattern;
+    compFirst = [compCenter, compOppCorner, compWinBlockCorner, compWinBlockCorner, compWinBlockCorner],
+    compSecond = [],
+    pattern = [];
 
+init();
 showAsk();
 
 function Player(id, type) {
@@ -59,202 +95,16 @@ function Player(id, type) {
     this.moves = [];
 }
 
-// C 1st:
-// -center
-
-// O 2nd:
-// A-edge
-// B-corner
-
-// C 3rd:
-// A-O played edge, play opposite corner
-// B-opposite corner to last O play
-
-// O 4th:
-// A1-block or A2 not
-// B1-edge or B2-corner
-
-// C 5th:
-// A1-block
-// A2-check if opposite corner to last C played open, if so win
-// B1-play opposite open corner
-// B2-counter to tie
-
-// O 6th:
-// A--
-// B1--
-
-// C 7th:
-// A-check third corner(?) and X surrounded edge for win
-// B1-look for win
-let compFirst = [compCenter, compOppCorner, compFirstThird, canWin];
-let compSecond = [];
-
-function compCenter() {
-    spaces[4].dispatchEvent(new MouseEvent('mousedown'));
-}
-
-function compOppCorner() {
-    let lastMove = player1.moves[player1.moves.length - 1];
-    let compMove;
-    switch (lastMove) {
-        case "space1":
-            if (availableSpaces.includes("space9")) compMove = spaces[8];
-            break;
-        case "space2":
-            if (availableSpaces.includes("space7" || "space9")) compMove = availableSpaces.includes("space7") ? spaces[6] : spaces[8];
-            break;
-        case "space3":
-            if (availableSpaces.includes("space7")) compMove = spaces[6];
-            break;
-        case "space4":
-            if (availableSpaces.includes("space3" || "space9")) compMove = availableSpaces.includes("space3") ? spaces[2] : spaces[8];
-            break;
-        case "space6":
-            if (availableSpaces.includes("space1" || "space7")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[6];
-            break;
-        case "space7":
-            if (availableSpaces.includes("space3")) compMove = spaces[2];
-            break;
-        case "space8":
-            if (availableSpaces.includes("space1" || "space3")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
-            break;
-        case "space9":
-            if (availableSpaces.includes("space1")) compMove = spaces[0];
-            break;
-        default:
-            console.log("could not find open opposite corner for: " + lastMove);
-            console.log("choosing first available");
-            compMove = document.getElementById(availableSpaces.shift()); //might create compRandom which would replace this line and add more randomness
-    }
-    compMove.dispatchEvent(new MouseEvent('mousedown'));
-}
-
-function compFirstThird() {
-    //this may not fully consider both decision paths to this point
-    console.log("check for winning move and take it");
-    let winMove = canWin(player2);
-    console.log("winMove: " + winMove);
-    if (winMove != false) { //if win exists, take it
-        console.log("winning move found. clicking");
-        winMove.dispatchEvent(new MouseEvent('mousedown'));
-        return;
-    }
-    console.log("check for opponent winning move and block it");
-    winMove = canWin(player1);
-    if (winMove != false) { //if player1 can win on next turn, block
-        winMove.dispatchEvent(new MouseEvent('mousedown'));
-        return;
-    }
-    console.log("could not win or block, trying opposite corner");
-    compOppCorner();
-}
-
-function compBlock() {
-
-}
-
-function canWin(checkPlayer) {
-    let found = [],
-        missing = [];
-    for (let i = 0; i < winCombos.length; i++) {
-        console.log("win combo: " + winCombos[i]);
-        // console.dir(winCombos[i]);
-        found = winCombos[i].filter(sp => {
-            if (!checkPlayer.moves.includes(sp)) missing.push(sp);
-            return checkPlayer.moves.includes(sp);
-        });
-        console.log("found: " + found);
-        // console.dir(found);
-
-        console.log("missing: " + missing);
-        console.dir(missing);
-        console.log("is missing available? " + availableSpaces.includes("" + missing));
-        console.dir(availableSpaces);
-
-        if (found.length === 2 && availableSpaces.includes("" + missing)) {
-            winningSpace = spaces.find(sp => sp.id == missing);
-            return winningSpace;
-        }
-        found.length = 0;
-        missing.length = 0;
-    }
-    return -1;
-}
-
-function computerMove() {
-    console.log("computerMove");
-    if (typeof pattern === "undefined") pattern = move() === 0 ? compFirst : compSecond;
-
-    let turn = pattern.shift();
-    turn();
-}
-
-function spaceClick() {
-    console.log("spaceClick on: " + this.id);
-    this.removeEventListener("mousedown", spaceClick);
-    availableSpaces.splice(availableSpaces.indexOf(this.id), 1);
-    let mark = document.getElementById(this.id);
-    mark.classList.add(curPlayer.marker);
-
-    curPlayer.moves.push(this.id);
-    console.log("move#: " + move());
-    if (move() > 4) {
-        if (endCheck()) {
-            return;
-        }
-    }
-
-    curPlayer = curPlayer === player1 ? player2 : player1;
-
-    if (curPlayer.type === "computer") {
-        computerMove();
-    }
-}
-
-function endCheck() {
-    console.log("endcheck");
-    let win = winCombos.some(el => {
-        console.log("win combo");
-        console.dir(el);
-        return el.every(sp => { return curPlayer.moves.includes(sp) });
-    })
-    console.log("win check: " + win);
-    console.log("move check: " + move());
-    if (win || move() === 9) {
-        console.log("ending game");
-        spaces.forEach(el => el.removeEventListener("mousedown", spaceClick));
-
-        if (win) {
-            infoElem.innerHTML = "Player " + curPlayer.id + " wins!";
-            curPlayer === player1 ? player1Score.innerHTML = +player1Score.innerHTML + 1 : player2Score.innerHTML = +player2Score.innerHTML + 1;
-        } else {
-            infoElem.innerHTML = "Draw";
-        }
-        infoElem.classList.remove("fadeOut");
-        setTimeout(gameEnd, 3000);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function gameEnd() {
-    infoElem.classList.add("fadeOut");
-    console.log("removing markers");
-    spaces.forEach(el => el.classList.remove("x", "o"));
-    curPlayer = null;
-    player1.moves.length = 0;
-    player2.moves.length = 0;
-    chooseFirst();
-}
-
 function Ask(question, option1, option2, result1, result2) {
     this.question = question;
     this.option1 = option1;
     this.option2 = option2;
     this.result1 = result1;
     this.result2 = result2;
+}
+
+function init() {
+    availableSpaces = Array.from(allSpaces);
 }
 
 function showAsk() {
@@ -313,4 +163,171 @@ function gameStart() {
         el.removeAttribute("hidden");
         el.classList.add("fadeIn");
     });
+}
+
+function computerMove() {
+    console.log("computerMove");
+    if (!pattern.length) pattern = move() === 0 ? Array.from(compFirst) : Array.from(compSecond);
+    let turn = pattern.shift();
+    turn();
+}
+
+
+function compCenter() {
+    spaces[4].dispatchEvent(new MouseEvent('mousedown'));
+}
+
+function compOppCorner() {
+    let lastMove = player1.moves[player1.moves.length - 1];
+    let compMove;
+    console.log("last move: " + lastMove);
+    console.dir(player1.moves);
+    switch (lastMove) {
+        case "space1":
+            if (availableSpaces.includes("space9")) compMove = spaces[8];
+            break;
+        case "space2":
+            if (availableSpaces.includes("space7" || "space9")) compMove = availableSpaces.includes("space7") ? spaces[6] : spaces[8];
+            break;
+        case "space3":
+            if (availableSpaces.includes("space7")) compMove = spaces[6];
+            break;
+        case "space4":
+            if (availableSpaces.includes("space3" || "space9")) compMove = availableSpaces.includes("space3") ? spaces[2] : spaces[8];
+            break;
+        case "space6":
+            if (availableSpaces.includes("space1" || "space7")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[6];
+            break;
+        case "space7":
+            if (availableSpaces.includes("space3")) compMove = spaces[2];
+            break;
+        case "space8":
+            if (availableSpaces.includes("space1" || "space3")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
+            break;
+        case "space9":
+            if (availableSpaces.includes("space1")) compMove = spaces[0];
+            break;
+        default:
+            console.log("could not find open opposite corner for: " + lastMove);
+            console.log("choosing first available");
+            // compMove = document.getElementById(availableSpaces.shift()); //might create compRandom which would replace this line and add more randomness
+    }
+    console.log("compMove: " + compMove);
+    compMove = compMove || document.getElementById(availableSpaces[0]);
+    console.log("compMove: " + compMove);
+
+    compMove.dispatchEvent(new MouseEvent('mousedown'));
+}
+
+function compWinBlockCorner() {
+    //this may not fully consider both decision paths to this point
+    console.log("check for winning move and take it");
+    let winMove = canWin(player2);
+    console.log("winMove: " + winMove);
+    if (winMove != false) { //if win exists, take it
+        console.log("winning move found. clicking");
+        winMove.dispatchEvent(new MouseEvent('mousedown'));
+        return;
+    }
+    console.log("check for opponent winning move and block it");
+    winMove = canWin(player1);
+    if (winMove != false) { //if player1 can win on next turn, block
+        console.log("blocking opponent win");
+        winMove.dispatchEvent(new MouseEvent('mousedown'));
+        return;
+    }
+    console.log("could not win or block, trying opposite corner");
+    compOppCorner();
+}
+
+function canWin(checkPlayer) {
+    let found = [],
+        missing = [];
+
+    for (let i = 0; i < winCombos.length; i++) {
+        console.log("win combo: " + winCombos[i]);
+
+        winCombos[i].forEach(sp => {
+            if (checkPlayer.moves.includes(sp)) {
+                console.log("found: " + sp);
+                found.push(sp);
+            } else {
+                console.log("missing: " + sp);
+                missing.push(sp);
+            }
+        });
+
+        if (found.length === 2 && availableSpaces.includes("" + missing)) {
+            console.log("found: " + found);
+            console.log("missing: " + missing);
+            console.log("is missing available? " + availableSpaces.includes("" + missing));
+            console.dir(availableSpaces);
+            winningSpace = spaces.find(sp => sp.id == missing);
+            return winningSpace;
+        }
+        found.length = 0;
+        missing.length = 0;
+    }
+    return false;
+}
+
+function spaceClick() {
+    console.log("+++++++++spaceClick on: " + this.id);
+    this.removeEventListener("mousedown", spaceClick);
+    availableSpaces.splice(availableSpaces.indexOf(this.id), 1);
+    let mark = document.getElementById(this.id);
+    mark.classList.add(curPlayer.marker);
+
+    curPlayer.moves.push(this.id);
+    console.log("move#: " + move());
+    if (move() > 4) {
+        if (endCheck()) {
+            return;
+        }
+    }
+
+    curPlayer = curPlayer === player1 ? player2 : player1;
+
+    if (curPlayer.type === "computer") {
+        computerMove();
+    }
+}
+
+function endCheck() {
+    console.log("endcheck");
+    let win = winCombos.some(el => {
+        // console.log("win combo");
+        // console.dir(el);
+        return el.every(sp => { return curPlayer.moves.includes(sp) });
+    })
+    console.log("win check: " + win);
+    if (win || move() === 9) {
+        console.log("ending game");
+        spaces.forEach(el => el.removeEventListener("mousedown", spaceClick));
+
+        if (win) {
+            infoElem.innerHTML = "Player " + curPlayer.id + " wins!";
+            curPlayer === player1 ? player1Score.innerHTML = +player1Score.innerHTML + 1 : player2Score.innerHTML = +player2Score.innerHTML + 1;
+        } else {
+            infoElem.innerHTML = "Draw";
+        }
+        infoElem.classList.remove("fadeOut");
+        setTimeout(gameEnd, 3000);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function gameEnd() {
+    infoElem.classList.add("fadeOut");
+    console.log("removing markers");
+    spaces.forEach(el => el.classList.remove("x", "o"));
+    curPlayer = null;
+    player1.moves.length = 0;
+    player2.moves.length = 0;
+    // while (pattern.length > 0) pattern.shift();
+    pattern = [];
+    init();
+    chooseFirst();
 }
