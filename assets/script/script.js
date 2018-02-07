@@ -45,12 +45,12 @@ B2-counter to tie
 O 6th:
 A--
 B1--
-B2-edge/block (error)
+B2-block or ?
 
 C 7th:
 A-WIN
-B1-look for win
-B2-counter
+B1-WIN
+B2-block or WIN
 */
 let infoElem = document.getElementById("info"),
     questionElem = document.getElementById("question"),
@@ -79,10 +79,11 @@ let infoElem = document.getElementById("info"),
         ["space1", "space5", "space9"],
         ["space3", "space5", "space7"]
     ],
+    edges = ["space2", "space4", "space6", "space8"],
     curPlayer,
     move = () => { return player1.moves.length + player2.moves.length },
-    compFirst = [compCenter, compOppCorner, compWinBlockCorner, compWinBlockCorner, compWinBlockCorner],
-    compSecond = [],
+    compFirst = [compCenter, compWinBlockCorner, compWinBlockCorner, compWinBlockCorner, compWinBlockCorner],
+    compSecond = [CSA],
     pattern = [];
 
 init();
@@ -140,11 +141,11 @@ function reBounceIn() {
 }
 
 function chooseFirst() {
-    // let outcome = Math.floor(Math.random() * 2) + 1;
-    // infoElem.innerHTML = "Player " + outcome + " goes first.";
-    // curPlayer = outcome == 1 ? player1 : player2;
-    curPlayer = player2;
-    infoElem.innerHTML = "Player 2 goes first.";
+    let outcome = Math.floor(Math.random() * 2) + 1;
+    infoElem.innerHTML = "Player " + outcome + " goes first.";
+    curPlayer = outcome == 1 ? player1 : player2;
+    // curPlayer = player2;
+    // infoElem.innerHTML = "Player 2 goes first.";
 
     setTimeout(gameStart, 2000);
     spaces.forEach(el => {
@@ -167,7 +168,8 @@ function gameStart() {
 
 function computerMove() {
     console.log("computerMove");
-    if (!pattern.length) pattern = move() === 0 ? Array.from(compFirst) : Array.from(compSecond);
+    let lastMove = player1.moves[player1.moves.length - 1]; //make this a global function like move?
+    if (!pattern.length) pattern = move() === 0 ? Array.from(compFirst) : !edges.includes(lastMove) ? Array.from(compSecond) : Array.from(compFirst);
     let turn = pattern.shift();
     turn();
 }
@@ -175,6 +177,10 @@ function computerMove() {
 
 function compCenter() {
     spaces[4].dispatchEvent(new MouseEvent('mousedown'));
+}
+
+function CSA() {
+
 }
 
 function compOppCorner() {
@@ -187,22 +193,22 @@ function compOppCorner() {
             if (availableSpaces.includes("space9")) compMove = spaces[8];
             break;
         case "space2":
-            if (availableSpaces.includes("space7" || "space9")) compMove = availableSpaces.includes("space7") ? spaces[6] : spaces[8];
+            if (["space7", "space9"].some(sp => availableSpaces.includes(sp))) compMove = availableSpaces.includes("space7") ? spaces[6] : spaces[8];
             break;
         case "space3":
             if (availableSpaces.includes("space7")) compMove = spaces[6];
             break;
         case "space4":
-            if (availableSpaces.includes("space3" || "space9")) compMove = availableSpaces.includes("space3") ? spaces[2] : spaces[8];
+            if (["space3", "space9"].some(sp => availableSpaces.includes(sp))) compMove = availableSpaces.includes("space3") ? spaces[2] : spaces[8];
             break;
         case "space6":
-            if (availableSpaces.includes("space1" || "space7")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[6];
+            if (["space1", "space7"].some(sp => availableSpaces.includes(sp))) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[6];
             break;
         case "space7":
             if (availableSpaces.includes("space3")) compMove = spaces[2];
             break;
         case "space8":
-            if (availableSpaces.includes("space1" || "space3")) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
+            if (["space1", "space3"].some(sp => availableSpaces.includes(sp))) compMove = availableSpaces.includes("space1") ? spaces[0] : spaces[2];
             break;
         case "space9":
             if (availableSpaces.includes("space1")) compMove = spaces[0];
@@ -214,7 +220,7 @@ function compOppCorner() {
     }
     console.log("compMove: " + compMove);
     compMove = compMove || document.getElementById(availableSpaces[0]);
-    console.log("compMove: " + compMove);
+    console.log("compMove: " + compMove.id);
 
     compMove.dispatchEvent(new MouseEvent('mousedown'));
 }
@@ -260,7 +266,7 @@ function canWin(checkPlayer) {
         if (found.length === 2 && availableSpaces.includes("" + missing)) {
             console.log("found: " + found);
             console.log("missing: " + missing);
-            console.log("is missing available? " + availableSpaces.includes("" + missing));
+            console.log("is missing available? " + availableSpaces.includes(missing));
             console.dir(availableSpaces);
             winningSpace = spaces.find(sp => sp.id == missing);
             return winningSpace;
