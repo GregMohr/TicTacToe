@@ -5,6 +5,8 @@ x. powerups: gained with every win, winstreaks, combos, losingstreaks, 2 with wi
 - destroy opponent's marker, does it use up your turn, i guess it can't or that'd be worthless, unless you could stack powerups and use more than one
 - extra move
 - steal a win, a circular button appears between the two scores, animated spin while removing 1 from opp and adding to player
+- change game mode during game...could this work? how could it be advantageous?
+x. random events: flip markers; flip board, but leave markers; 
 x. explosions on move
 x. little musical refrains when clicking things and moving mouse
 x. fanfare on player win
@@ -86,6 +88,7 @@ let infoElem = document.getElementById("info"),
     compSecond = [CSA],
     pattern = [];
 
+//refactor: initOnce as part of space object refactor
 init();
 showAsk();
 
@@ -104,6 +107,19 @@ function Ask(question, option1, option2, result1, result2) {
     this.result2 = result2;
 }
 
+function space() {
+    this.id;
+    this.type;
+    this.oppCorners = [];
+    this.oppEdges = [];
+    this.elem;
+}
+
+function initOnce() {
+    //refactor: init spaces here
+    //refactor: if I decide to split the top variables into objects, they'll init here
+}
+
 function init() {
     availableSpaces = Array.from(allSpaces);
 }
@@ -111,7 +127,7 @@ function init() {
 function showAsk() {
     if (!askComponents.length) {
         console.log("no more questions, choosing first player");
-        chooseFirst(); //this will need to be modified to allow for new questions later. should work for replay (rechoosing first), but maybe not all future end game scenarios, such as in Ex
+        chooseFirst();
         return;
     }
     ask = new Ask(...askComponents.shift());
@@ -144,12 +160,11 @@ function chooseFirst() {
     let outcome = Math.floor(Math.random() * 2) + 1;
     infoElem.innerHTML = "Player " + outcome + " goes first.";
     curPlayer = outcome == 1 ? player1 : player2;
-    // curPlayer = player2;
-    // infoElem.innerHTML = "Player 2 goes first.";
+    // curPlayer = player1;
+    // infoElem.innerHTML = "Player 1 goes first.";
 
     setTimeout(gameStart, 2000);
     spaces.forEach(el => {
-        //should I worry about the small amount of time the user will be able to click the spaces before the computer can move on first move?
         el.addEventListener("mousedown", spaceClick);
     });
     console.log("curPlayer type: " + curPlayer.type);
@@ -179,8 +194,15 @@ function compCenter() {
     spaces[4].dispatchEvent(new MouseEvent('mousedown'));
 }
 
-function CSA() {
+function blockFork() {
 
+}
+
+
+
+function CSA() {
+    //first move was center
+    //first move was corner
 }
 
 function compOppCorner() {
@@ -216,7 +238,6 @@ function compOppCorner() {
         default:
             console.log("could not find open opposite corner for: " + lastMove);
             console.log("choosing first available");
-            // compMove = document.getElementById(availableSpaces.shift()); //might create compRandom which would replace this line and add more randomness
     }
     console.log("compMove: " + compMove);
     compMove = compMove || document.getElementById(availableSpaces[0]);
@@ -275,6 +296,43 @@ function canWin(checkPlayer) {
         missing.length = 0;
     }
     return false;
+}
+
+function canFork(checkPlayer) {
+    //for every availableSpace, add to copy of player moves, run canWin(player1) modification
+    availableSpaces.forEach(sp => { //this may work better as a standard for loop so I can break it at 2 trues
+        let moves = Array.from(checkPlayer.moves);
+        moves.push(sp);
+    });
+    //that finds all matches and returns number or false, not just first and true/false
+    // let found = [],
+    //     missing = [];
+
+    // for (let i = 0; i < winCombos.length; i++) {
+    //     console.log("win combo: " + winCombos[i]);
+
+    //     winCombos[i].forEach(sp => {
+    //         if (checkPlayer.moves.includes(sp)) {
+    //             console.log("found: " + sp);
+    //             found.push(sp);
+    //         } else {
+    //             console.log("missing: " + sp);
+    //             missing.push(sp);
+    //         }
+    //     });
+
+    //     if (found.length === 2 && availableSpaces.includes("" + missing)) {
+    //         console.log("found: " + found);
+    //         console.log("missing: " + missing);
+    //         console.log("is missing available? " + availableSpaces.includes(missing));
+    //         console.dir(availableSpaces);
+    //         winningSpace = spaces.find(sp => sp.id == missing);
+    //         return winningSpace;
+    //     }
+    //     found.length = 0;
+    //     missing.length = 0;
+    // }
+    // return false;
 }
 
 function spaceClick() {
