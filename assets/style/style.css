@@ -54,11 +54,13 @@
 }
 
 #player1-score {
-    margin: 0 0 0 15px;
+    margin: 0 0 0 22px;
+    font-family: monospace;
 }
 
 #player2-score {
-    margin: 0 15px 0 0;
+    margin: 0 15px 0 2px;
+    font-family: monospace;
 }
 
 .player-info {
