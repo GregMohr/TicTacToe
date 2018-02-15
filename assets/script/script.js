@@ -20,11 +20,12 @@ x. user interactive coin toss: random player picks X or O;  opposing player stop
 x. wargames mode where both players are computer
 x. more computer techniques: starting from corner;
 x. may need to have multiple askComp sets for varied situations in the future. then just create a copy of the needed one for showAsk to splice up
-fix first move message on replay. It's fading out too quickly. may need to the way the classes are applied
+
 */
 let infoElem = document.getElementById("info"),
     questionElem = document.getElementById("question"),
     option1Elem = document.getElementById("option1"),
+    msgElem = document.getElementById("msg"),
     option2Elem = document.getElementById("option2"),
     player1Score = document.getElementById("player1-score"),
     player2Score = document.getElementById("player2-score"),
@@ -35,8 +36,8 @@ let infoElem = document.getElementById("info"),
     player2 = new Player(2),
     ask,
     askComponents = [
-        ["Versus", "Human", "Computer", () => player2.type = "human", () => player2.type = "computer"],
-        ["Player 1", "Xs", "Os", () => player1.marker = (player2.marker = "o", "x"), () => player1.marker = (player2.marker = "x", "o")]
+        ["Versus:", "Human", "Computer", () => player2.type = "human", () => player2.type = "computer"],
+        ["Player 1:", "Xs", "Os", () => player1.marker = (player2.marker = "o", "x"), () => player1.marker = (player2.marker = "x", "o")]
     ],
     winCombos = [
         ["space1", "space2", "space3"],
@@ -77,12 +78,27 @@ function initOnce() {
 }
 
 function init() {
+    console.log("init");
     availableSpaces = ["space1", "space2", "space3", "space4", "space5", "space6", "space7", "space8", "space9"];
+}
+
+function animateOut(elem, effect) {
+    //elements have '*In' effect applied on html
+    elem.classList.add(effect + "Out");
+    // cback = "re" + effect.substr(0, 1).toUpperCase() + effect.substr(1) + "In";
+    infoElem.addEventListener("webkitAnimationEnd", cback);
+}
+
+function animateIn(elem, effect) {
+    console.log("removing fadeOut to infoElem | reFadeIn");
+    infoElem.classList.remove("fadeOut");
+    infoElem.removeEventListener("webkitAnimationEnd", reFadeIn);
+    checkQuestions();
 }
 
 function showAsk() {
     ask = new Ask(...askComponents.shift());
-    console.log("showing ask");
+    console.log("showAsk");
     questionElem.innerHTML = ask.question;
     option1Elem.innerHTML = ask.option1;
     option2Elem.innerHTML = ask.option2;
@@ -92,40 +108,54 @@ function showAsk() {
 }
 
 function optionClick(callback) {
-    console.log("option clicked");
+    console.log("optionClick");
     callback();
     option1Elem.removeEventListener("click", optionClick1);
     option2Elem.removeEventListener("click", optionClick2);
+    console.log("adding bounceOut to infoElem | optionClick");
     infoElem.classList.add("bounceOut");
     infoElem.addEventListener("webkitAnimationEnd", reBounceIn);
 }
 
 function reBounceIn() {
+    console.log("reBounceIn");
+    console.log("removing bounceOut to infoElem | reBounceIn");
     infoElem.classList.remove("bounceOut");
     infoElem.removeEventListener("webkitAnimationEnd", reBounceIn);
     checkQuestions();
 }
 
 function checkQuestions() {
+    console.log("checkQuestions");
     if (askComponents.length > 0) {
         console.log("re-calling showAsk");
         showAsk();
     } else {
         console.log("no more questions, choosing first player");
+        questionElem.innerHTML = "";
+        option1Elem.innerHTML = "";
+        msgElem.innerHTML = "";
+        option2Elem.innerHTML = "";
         chooseFirst();
     }
 }
 
 function chooseFirst() {
+    console.log("chooseFirst");
     let outcome = Math.floor(Math.random() * 2) + 1;
-    infoElem.innerHTML = "Player " + outcome + " goes first.";
+    msgElem.innerHTML = "Player " + outcome + " goes first.";
     curPlayer = outcome == 1 ? player1 : player2;
     setTimeout(gameStart, 1000);
 }
 
 function gameStart() {
+    console.log("gameStart");
+    console.log("adding fadeOut to infoElem | gameStart");
     infoElem.classList.add("fadeOut");
-    playerInfo.forEach(el => {
+    infoElem.addEventListener("webkitAnimationEnd", clearMsg);
+
+    playerInfo.forEach(el => { //this is happening on each replay too, but is unnoticable
+        console.log("adding fadeIn to playerInfo elements | gamestart");
         el.removeAttribute("hidden");
         el.classList.add("fadeIn");
     });
@@ -137,7 +167,18 @@ function gameStart() {
     }
 }
 
+function clearMsg() {
+    console.log("clearMsg");
+    infoElem.setAttribute("hidden", "");
+    // msgElem.setAttribute("hidden", "");
+
+    // infoElem.classList.remove("fadeOut");
+    infoElem.removeEventListener("webkitAnimationEnd", clearMsg);
+    // setTimeout(() => infoElem.removeAttribute("hidden"), 10000);
+}
+
 function computerMove() {
+    console.log("computerMove");
     let compMove;
     findMove: {
         //*** All below compMove assignments intentional ***//
@@ -154,6 +195,7 @@ function computerMove() {
 }
 
 function canWin(moves) {
+    console.log("canWin");
     let found = [],
         missing = [];
     for (let i = 0; i < winCombos.length; i++) {
@@ -173,12 +215,14 @@ function canWin(moves) {
 }
 
 function canFork(moves) {
-    //may be able to move this first check to the end to check count > 3, take first open edge, 
+    console.log("canFork");
     if (move() == 3 && (moves.includes("space1") && moves.includes("space9") || (moves.includes("space3") && moves.includes("space7")))) {
         if (availableSpaces.some(el => { return edges.includes(el) })) {
             return availableSpaces.find(el => { return edges.includes(el); });
         }
     }
+    let fork = 0,
+        forker = [];
     for (let i = 0; i < availableSpaces.length; i++) {
         let count = 0;
         let checkMoves = moves.concat();
@@ -195,18 +239,16 @@ function canFork(moves) {
                     missing = sp;
                 }
             });
-
             if (found.length === 2 && availableSpaces.includes(missing)) count++;
-
             found.length = 0;
             missing.length = 0;
         });
-
         if (count > 1) return availableSpaces[i];
     }
 }
 
 function bestOpen() {
+    console.log("bestOpen");
     let compMove;
     findOpen: {
         //break into smaller functions?
@@ -241,14 +283,14 @@ function bestOpen() {
 }
 
 function spaceClick() {
-    console.log("+++++++++spaceClick on: " + this.id);
+    console.log("spaceClick");
     this.removeEventListener("mousedown", spaceClick);
 
     let removed = availableSpaces.splice(availableSpaces.indexOf(this.id), 1);
     curPlayer.moves.push(this.id);
     this.classList.add(curPlayer.marker);
 
-    console.log("move#: " + move());
+    console.log("move#: " + move() + " on " + this.id);
 
     if (move() > 4 && endCheck()) return;
 
@@ -276,6 +318,7 @@ function endCheck() {
         } else {
             infoElem.innerHTML = "Draw";
         }
+        console.log("removing fadeOut from infoElem | endcheck");
         infoElem.classList.remove("fadeOut");
         setTimeout(gameEnd, 1000);
         return true;
@@ -283,7 +326,10 @@ function endCheck() {
 }
 
 function gameEnd() {
+    console.log("gameEnd");
     //most of this stuff should probably move to a cleanup function and gameEnd should handle messaging regarding game outcome
+    console.log("adding fadeOut to infoElem | gameEnd");
+
     infoElem.classList.add("fadeOut");
     console.log("removing markers");
     spaces.forEach(el => el.classList.remove("x", "o"));
@@ -291,5 +337,5 @@ function gameEnd() {
     player1.moves.length = 0;
     player2.moves.length = 0;
     init();
-    chooseFirst();
+    infoElem.addEventListener("webkitAnimationEnd", chooseFirst);
 }
