@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/GregMohr/TicTacToe#readme",
   "devDependencies": {
+    "ajv": "^6.2.0",
     "eslint": "^4.18.1",
     "eslint-config-airbnb": "^16.1.0",
     "eslint-plugin-import": "^2.9.0",
