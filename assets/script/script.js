@@ -221,8 +221,6 @@ function canFork(moves) {
             return availableSpaces.find(el => { return edges.includes(el); });
         }
     }
-    let fork = 0,
-        forker = [];
     for (let i = 0; i < availableSpaces.length; i++) {
         let count = 0;
         let checkMoves = moves.concat();
